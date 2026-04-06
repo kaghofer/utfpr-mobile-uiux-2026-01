@@ -7,7 +7,10 @@ import java.text.DecimalFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.text.DecimalFormatSymbols
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 fun List<Lancamento>.calcularSaldo(): BigDecimal = map {
     if (it.paga) {
@@ -37,4 +40,12 @@ fun BigDecimal.formatar(): String {
 fun LocalDate.formatar(): String {
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     return format(formatter)
+}
+
+fun Long.toBrazilianDateFormat(): String {
+    val date = Date(this)
+    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale("pt-BR")).apply {
+        timeZone = TimeZone.getTimeZone("GMT")
+    }
+    return formatter.format(date)
 }

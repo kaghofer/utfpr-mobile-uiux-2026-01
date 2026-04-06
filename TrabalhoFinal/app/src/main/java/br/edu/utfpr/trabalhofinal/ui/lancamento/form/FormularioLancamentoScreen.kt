@@ -1,18 +1,26 @@
 package br.edu.utfpr.trabalhofinal.ui.lancamento.form
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -35,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.onFocusEvent
@@ -53,6 +62,7 @@ import br.edu.utfpr.trabalhofinal.ui.lancamento.form.composables.FormTextField
 import br.edu.utfpr.trabalhofinal.ui.shared.composables.Carregando
 import br.edu.utfpr.trabalhofinal.ui.shared.composables.ErroAoCarregar
 import br.edu.utfpr.trabalhofinal.ui.theme.TrabalhoFinalTheme
+import br.edu.utfpr.trabalhofinal.utils.toBrazilianDateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -215,22 +225,28 @@ private fun FormContent(
     var showDatePickerDialog by remember {
         mutableStateOf(false)
     }
-    var selectedDate by remember {
-        mutableStateOf("")
-    }
+
     val focusManager = LocalFocusManager.current
 
-    fun Long.toBrazilianDateFormat(
-        pattern: String = "dd/MM/yyyy"
-    ): String {
-        val date = Date(this)
-        val formatter = SimpleDateFormat(
-            pattern, Locale("pt-br")
-        ).apply {
-            timeZone = TimeZone.getTimeZone("GMT")
+    if(showDatePickerDialog){
+        DatePickerDialog(
+            onDismissRequest = { showDatePickerDialog = false },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        datePickerState
+                            .selectedDateMillis?.let { millis ->
+                                onDataAlterada (millis.toBrazilianDateFormat())
+                            }
+                        showDatePickerDialog = false
+                    }) {
+                    Text(text = "Escolher data")
+                }
+            }) {
+            DatePicker(state = datePickerState)
         }
-        return formatter.format(date)
     }
+
     Column(
         modifier = modifier
             .padding(all = 16.dp)
@@ -240,55 +256,71 @@ private fun FormContent(
         val formTextFieldModifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-        FormTextField(
-            modifier = formTextFieldModifier,
-            label = stringResource(R.string.descricao),
-            value = descricao.valor,
-            errorMessageCode = descricao.codigoMensagemErro,
-            onValueChanged = onDescricaoAlterada,
-            keyboardCapitalization = KeyboardCapitalization.Words,
-            enabled = !processando
-        )
-        FormTextField(
-            modifier = formTextFieldModifier,
-            label = stringResource(R.string.valor),
-            value = valor.valor,
-            errorMessageCode = valor.codigoMensagemErro,
-            onValueChanged = onValorAlterado,
-            keyboardType = KeyboardType.Number,
-            enabled = !processando
-        )
-        if (showDatePickerDialog) {
-            DatePickerDialog(
-                onDismissRequest = { showDatePickerDialog = false },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            datePickerState
-                                .selectedDateMillis?.let { millis ->
-                                    onDataAlterada (millis.toBrazilianDateFormat())
-                                }
-                            showDatePickerDialog = false
-                        }) {
-                        Text(text = "Escolher data")
-                    }
-                }) {
-                DatePicker(state = datePickerState)
-            }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Notes,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp).padding(end = 12.dp)
+            )
+            FormTextField(
+                modifier = Modifier.weight(1f),
+                label = stringResource(R.string.descricao),
+                value = descricao.valor,
+                onValueChanged = onDescricaoAlterada,
+                enabled = !processando
+            )
         }
-        FormTextField(
-            modifier = formTextFieldModifier.onFocusEvent{
-                if(it.isFocused){showDatePickerDialog = true
-                    focusManager.clearFocus(force = true)
-                } },
-            label = stringResource(R.string.data),
-            value = data.valor,
-            errorMessageCode = data.codigoMensagemErro,
-            onValueChanged = onDataAlterada,
-            keyboardType = KeyboardType.Number,
-            enabled = !processando,
-            readOnly = true
-        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Filled.AttachMoney,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp).padding(end = 12.dp)
+            )
+            FormTextField(
+                modifier = Modifier.weight(1f),
+                label = stringResource(R.string.valor),
+                value = valor.valor,
+                onValueChanged = onValorAlterado,
+                keyboardType = KeyboardType.Number,
+                enabled = !processando
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(modifier = Modifier.width(40.dp))
+
+            FormTextField(
+                modifier = Modifier
+                    .weight(1f)
+                    .onFocusEvent {
+                        if (it.isFocused) {
+                            showDatePickerDialog = true
+                            focusManager.clearFocus()
+                        }
+                    },
+                label = stringResource(R.string.data),
+                value = data.valor,
+                onValueChanged = {},
+                readOnly = true,
+                enabled = !processando,
+                trailingIcon = {
+                    Icon(imageVector = Icons.Filled.CalendarMonth, contentDescription = null)
+                }
+            )
+        }
         val checkOptionsModifier = Modifier.padding(vertical = 8.dp)
         FormCheckbox(
             modifier = checkOptionsModifier,
