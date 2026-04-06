@@ -13,7 +13,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,12 +25,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.onFocusEvent
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,6 +53,10 @@ import br.edu.utfpr.trabalhofinal.ui.lancamento.form.composables.FormTextField
 import br.edu.utfpr.trabalhofinal.ui.shared.composables.Carregando
 import br.edu.utfpr.trabalhofinal.ui.shared.composables.ErroAoCarregar
 import br.edu.utfpr.trabalhofinal.ui.theme.TrabalhoFinalTheme
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun FormularioLancamentoScreen(
@@ -195,6 +210,27 @@ private fun FormContent(
     onStatusPagamentoAlterado: (String) -> Unit,
     onTipoAlterado: (String) -> Unit
 ) {
+    val datePickerState = rememberDatePickerState()
+
+    var showDatePickerDialog by remember {
+        mutableStateOf(false)
+    }
+    var selectedDate by remember {
+        mutableStateOf("")
+    }
+    val focusManager = LocalFocusManager.current
+
+    fun Long.toBrazilianDateFormat(
+        pattern: String = "dd/MM/yyyy"
+    ): String {
+        val date = Date(this)
+        val formatter = SimpleDateFormat(
+            pattern, Locale("pt-br")
+        ).apply {
+            timeZone = TimeZone.getTimeZone("GMT")
+        }
+        return formatter.format(date)
+    }
     Column(
         modifier = modifier
             .padding(all = 16.dp)
@@ -222,14 +258,36 @@ private fun FormContent(
             keyboardType = KeyboardType.Number,
             enabled = !processando
         )
+        if (showDatePickerDialog) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePickerDialog = false },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            datePickerState
+                                .selectedDateMillis?.let { millis ->
+                                    onDataAlterada (millis.toBrazilianDateFormat())
+                                }
+                            showDatePickerDialog = false
+                        }) {
+                        Text(text = "Escolher data")
+                    }
+                }) {
+                DatePicker(state = datePickerState)
+            }
+        }
         FormTextField(
-            modifier = formTextFieldModifier,
+            modifier = formTextFieldModifier.onFocusEvent{
+                if(it.isFocused){showDatePickerDialog = true
+                    focusManager.clearFocus(force = true)
+                } },
             label = stringResource(R.string.data),
             value = data.valor,
             errorMessageCode = data.codigoMensagemErro,
             onValueChanged = onDataAlterada,
             keyboardType = KeyboardType.Number,
-            enabled = !processando
+            enabled = !processando,
+            readOnly = true
         )
         val checkOptionsModifier = Modifier.padding(vertical = 8.dp)
         FormCheckbox(
@@ -284,4 +342,17 @@ private fun FormContentPreview() {
             onTipoAlterado = {}
         )
     }
+}
+
+@Composable
+fun DataPicker(modifier: Modifier = Modifier) {
+
+    val datePickerState = rememberDatePickerState()
+    DatePicker(state = datePickerState)
+}
+
+@Preview(showSystemUi = true)
+@Composable
+private fun DataPickerPreview(){
+    DataPicker()
 }

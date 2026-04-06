@@ -6,6 +6,8 @@ import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.text.DecimalFormatSymbols
+import java.util.Locale
 
 fun List<Lancamento>.calcularSaldo(): BigDecimal = map {
     if (it.paga) {
@@ -24,7 +26,11 @@ fun List<Lancamento>.calcularProjecao(): BigDecimal = map {
 }.sumOf { it }
 
 fun BigDecimal.formatar(): String {
-    val formatter = DecimalFormat("R$#,##0.00")
+    val symbols = DecimalFormatSymbols(Locale("pt", "BR"))
+
+    val pattern = "R$#,##0.00;-R$#,##0.00"
+
+    val formatter = DecimalFormat(pattern, symbols)
     return formatter.format(this)
 }
 

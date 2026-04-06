@@ -9,8 +9,13 @@ import br.edu.utfpr.trabalhofinal.R
 import br.edu.utfpr.trabalhofinal.data.LancamentoDatasource
 import br.edu.utfpr.trabalhofinal.data.TipoLancamentoEnum
 import br.edu.utfpr.trabalhofinal.ui.Arguments
+import br.edu.utfpr.trabalhofinal.utils.formatar
 import java.math.BigDecimal
+import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class FormularioLancamentoViewModel(
     savedStateHandle: SavedStateHandle
@@ -43,7 +48,7 @@ class FormularioLancamentoViewModel(
                 carregando = false,
                 lancamento = lancamento,
                 descricao = state.descricao.copy(valor = lancamento.descricao),
-                data = state.data.copy(valor = lancamento.data.toString()),
+                data = state.data.copy(valor = lancamento.data.formatar()),
                 valor = state.valor.copy(valor = lancamento.valor.toString()),
                 paga = state.paga.copy(valor = lancamento.paga.toString()),
                 tipo = state.tipo.copy(valor = lancamento.tipo.name)
@@ -115,9 +120,10 @@ class FormularioLancamentoViewModel(
             state = state.copy(
                 salvando = true
             )
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
             val lancamento = state.lancamento.copy(
                 descricao = state.descricao.valor,
-                data = LocalDate.parse(state.data.valor),
+                data = LocalDate.parse(state.data.valor, formatter),
                 valor = BigDecimal(state.valor.valor),
                 paga = state.paga.valor.toBoolean(),
                 tipo = TipoLancamentoEnum.valueOf(state.tipo.valor)

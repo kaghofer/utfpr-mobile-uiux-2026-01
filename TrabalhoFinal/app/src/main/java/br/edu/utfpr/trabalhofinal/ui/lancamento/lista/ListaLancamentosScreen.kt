@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material.icons.filled.ThumbDownOffAlt
@@ -26,7 +25,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,14 +33,11 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.toColorInt
 import androidx.lifecycle.viewmodel.compose.viewModel
 import br.edu.utfpr.trabalhofinal.R
 import br.edu.utfpr.trabalhofinal.data.Lancamento
@@ -173,7 +168,7 @@ private fun List(
 ) {
     LazyColumn(modifier = modifier) {
         items(lancamentos) { lancamento ->
-            val descricao = "${lancamento.descricao} - ${lancamento.valor}"
+            val descricao = "${lancamento.descricao}"
 
             val (icon, tint, color) = when {
                 lancamento.paga && lancamento.tipo == TipoLancamentoEnum.DESPESA  -> {
@@ -196,7 +191,7 @@ private fun List(
             ListItem(
                 modifier = Modifier.clickable { onLancamentoPressed(lancamento) },
                 headlineContent = { Text(descricao, color = color) },
-                supportingContent = { Text(lancamento.data.formatar()) },
+                supportingContent = { LinhaDataValor(data = lancamento.data.formatar(), valor = lancamento.valor, tipo = lancamento.tipo) },
                 leadingContent = {
                     Icon(
                         imageVector = icon,
@@ -208,6 +203,51 @@ private fun List(
             )
         }
     }
+}
+
+@Composable
+fun LinhaDataValor(modifier: Modifier = Modifier, data: String, valor: BigDecimal, tipo: TipoLancamentoEnum) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        val valorFinal = if (tipo == TipoLancamentoEnum.DESPESA && valor > BigDecimal.ZERO) {
+            valor.negate()
+        } else {
+            valor
+        }
+        Row {
+            Text(
+                modifier = Modifier.padding(top = 8.dp),
+                text = "Data: ",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                modifier = Modifier.padding(top = 8.dp, end = 8.dp),
+                text = data,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        Row {
+            val color = if (tipo == TipoLancamentoEnum.DESPESA) Color(0xFFCF5355) else Color(0xFF00984E)
+            Text(
+                modifier = Modifier.padding(top = 8.dp, end = 8.dp),
+                text = valorFinal.formatar(),
+                style = MaterialTheme.typography.titleSmall,
+                color = color
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LinhaDataValorPreview() {
+    LinhaDataValor(data = "10/09/2024", valor = BigDecimal("-100.00"), tipo = TipoLancamentoEnum.DESPESA)
 }
 
 @Preview(showBackground = true)
@@ -234,21 +274,11 @@ private fun BottomBar(
             modifier = Modifier.padding(top = 20.dp),
             titulo = stringResource(R.string.saldo),
             valor = lancamentos.calcularSaldo(),
-            textColor = if(lancamentos.calcularSaldo() >= BigDecimal.ZERO){
-                Color(0xFF00984E)
-            }else{
-                MaterialTheme.colorScheme.error
-            }
         )
         Totalizador(
             modifier = Modifier.padding(bottom = 20.dp),
             titulo = stringResource(R.string.previsao),
             valor = lancamentos.calcularProjecao(),
-            textColor = if(lancamentos.calcularProjecao() >= BigDecimal.ZERO){
-                Color(0xFF00984E)
-            }else{
-                MaterialTheme.colorScheme.error
-            }
         )
     }
 }
@@ -258,8 +288,14 @@ fun Totalizador(
     modifier: Modifier = Modifier,
     titulo: String,
     valor: BigDecimal,
-    textColor: Color
 ) {
+    var textColor = MaterialTheme.colorScheme.primary
+    if (valor < BigDecimal.ZERO){
+        textColor = Color(0xFFCF5355)
+    }else{
+        textColor = Color(0xFF00984E)
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth(),
@@ -303,7 +339,7 @@ private fun gerarLancamentos(): List<Lancamento> = listOf(
     ),
     Lancamento(
         descricao = "Aluguel",
-        valor = BigDecimal("1500.0"),
+        valor = BigDecimal("6000.0"),
         tipo = TipoLancamentoEnum.DESPESA,
         data = LocalDate.of(2024, 9, 10),
         paga = true
